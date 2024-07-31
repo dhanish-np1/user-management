@@ -1,25 +1,27 @@
 import Admin from "../model/adminModel.js";
 import User from "../model/userModel.js";
-
+import bcryptjs from "bcryptjs";
+import { errorHandler } from "../utils/error.js";
+import jwt from "jsonwebtoken";
 
 export const adminSignIn = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const validUser = await User.findOne({ email });
+    const validUser = await Admin.findOne({ email });
     if (!validUser) {
-      return next(errorHandler(404, "user Not found"));
+      console.log('hello');
+      return next(errorHandler(404, "wrong password or email"));
     }
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword) {
       return next(errorHandler(401, "wrong password or email"));
     }
     const token = jwt.sign({ id: validUser._id }, "dfdsfsdfsdfdfdsfhhjhgs");
-    console.log(token);
     const { password: hashedPassword, ...rest } = validUser._doc;
     const expiryDate = 24 * 60 * 60 * 1000;
 
     res
-      .cookie("access_token", token, {
+      .cookie("admin_access_token", token, {
         maxAge: expiryDate,
         httpOnly: true,
         sameSite: "none",
@@ -35,9 +37,22 @@ export const adminSignIn = async (req, res, next) => {
 export const fetchData = async (req,res)=>{
   try {
       const data = await User.find()
-      console.log("data==::>",data);
       res.json({userData:data})
   } catch (error) {
       console.log(error);
   }
 } 
+
+
+export const signOut = (req, res) => {
+  res
+    .clearCookie("admin_access_token", {
+      httpOnly: true,
+      sameSite: "None",
+      path: "/",
+      secure: true,
+    })
+    .status(200)
+    .json("Signout success!");
+  console.log("admin logoutedd");
+};

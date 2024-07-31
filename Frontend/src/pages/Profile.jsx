@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import profile from "../assets/profile.png";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import {
@@ -11,16 +10,18 @@ import {
 
 const ProfilePage = () => {
   const [profileImage, setProfileImage] = useState("");
+  const [formImg,setFormImage]=useState('');
   const [editing, setEditing] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
   const [username, setUsername] = useState(currentUser.username);
   const dispatch = useDispatch();
-
+  const imagePath=`../uploads/${currentUser?.profile}`
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
     reader.onloadend = () => {
       setProfileImage(reader.result);
+      setFormImage(file)
     };
     if (file) {
       reader.readAsDataURL(file);
@@ -38,22 +39,19 @@ const ProfilePage = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     try {
       dispatch(updateUserStart());
       const formData = new FormData();
-      formData.append("image", profileImage);
+      formData.append("images", formImg);
       formData.append("username", username);
       const userId = currentUser._id;
-
+      const config = { headers: { "Content-Type": "multipart/form-data" },withCredentials: true };
       const response = await axios.post(
         `http://localhost:3000/update/${userId}`,
         formData,
-        {
-          withCredentials: true,
-        }
+        config
       );
-      const data=response.data;
+      const data = response.data;
       if (data.success === false) {
         dispatch(updateUserFailure(data));
         return;
@@ -79,7 +77,7 @@ const ProfilePage = () => {
           <form onSubmit={handleSubmit} className="w-full">
             <div className="relative ml-28">
               <img
-                src={profileImage || profile}
+                src={profileImage || imagePath}
                 alt="Profile"
                 className="w-32 h-32 rounded-full object-cover border-4 border-gray-300"
               />

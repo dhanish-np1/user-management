@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken";
 
 export const signUp = async (req, res, next) => {
   try {
-    console.log(req.body);
     const { username, email, password, confirmPassword } = req.body;
     if (
       email.trim() == "" ||
@@ -23,8 +22,8 @@ export const signUp = async (req, res, next) => {
     if (!emailRegex.test(email)) {
       return next(errorHandler(404, "Invalid email address"));
     }
-    const existEmail= await User.findOne({email})
-    if(existEmail){
+    const existEmail = await User.findOne({ email });
+    if (existEmail) {
       return next(errorHandler(404, "This email already exist"));
     }
     if (password.length < 6) {
@@ -50,14 +49,13 @@ export const signIn = async (req, res, next) => {
     }
     const validUser = await User.findOne({ email });
     if (!validUser) {
-      return next(errorHandler(404, "user Not found"));
+      return next(errorHandler(404, "wrong password or email"));
     }
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword) {
       return next(errorHandler(401, "wrong password or email"));
     }
     const token = jwt.sign({ id: validUser._id }, "dfdsfsdfsdfdfdsfhhjhgs");
-    console.log(token);
     const { password: hashedPassword, ...rest } = validUser._doc;
     const expiryDate = 24 * 60 * 60 * 1000;
 
@@ -80,21 +78,23 @@ export const updateProfile = async (req, res, next) => {
     return next(errorHandler(401, "You can update only your account!"));
   }
   try {
-    
+    const updateData = {
+      username: req.body.username,
+    };
+    if (req.file) {
+      updateData.profile = req.file.filename;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       {
-        $set: {
-          username: req.body.username,
-        },
+        $set:updateData ,
       },
       { new: true }
     );
-    console.log(updatedUser._doc);
+    console.log(updatedUser);
     const { password, ...rest } = updatedUser._doc;
-    console.log('first');
     res.status(200).json(rest);
-    
   } catch (error) {
     next(error);
   }

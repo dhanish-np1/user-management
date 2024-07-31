@@ -23,7 +23,6 @@ const userSlice = createSlice({
       state.error = action.payload;
     },
     resetError:(state,action)=>{
-      state.currentUser = null;
       state.loading = false;
       state.error = false;
     },
