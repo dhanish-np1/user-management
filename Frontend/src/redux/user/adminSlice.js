@@ -30,8 +30,7 @@ const adminSlice = createSlice({
       state.currentAdmin = null;
       state.loading = false;
       state.error = false;
-    },
-
+    }
   },
 });
 
@@ -40,7 +39,8 @@ export const {
  resetError,
  signInStart,
  signInSuccess,
- signOut
+ signOut,
+ 
  
 } = adminSlice.actions;
 

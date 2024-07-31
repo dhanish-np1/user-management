@@ -14,7 +14,7 @@ export const signUp = async (req, res, next) => {
     ) {
       return next(errorHandler(404, "please fill the field"));
     }
-    if (username.length < 2) {
+    if (username.trim().length < 2) {
       return next(errorHandler(404, "username must be more then 2 char"));
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,8 +26,38 @@ export const signUp = async (req, res, next) => {
     if (existEmail) {
       return next(errorHandler(404, "This email already exist"));
     }
-    if (password.length < 6) {
-      return next(errorHandler(404, "password must be more than 6 char"));
+    const validatePassword = (password) => {
+      const minLength = 8; // Minimum length for strong password
+      const hasUpperCase = /[A-Z]/.test(password);
+      const hasLowerCase = /[a-z]/.test(password);
+      const hasDigit = /\d/.test(password);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+      if (password.length < minLength) {
+        return { valid: false, message: "Password must be at least 8 characters long." };
+      }
+    
+      if (!hasUpperCase) {
+        return { valid: false, message: "Password must contain at least one uppercase letter." };
+      }
+    
+      if (!hasLowerCase) {
+        return { valid: false, message: "Password must contain at least one lowercase letter." };
+      }
+    
+      if (!hasDigit) {
+        return { valid: false, message: "Password must contain at least one digit." };
+      }
+    
+      if (!hasSpecialChar) {
+        return { valid: false, message: "Password must contain at least one special character." };
+      }
+    
+      return { valid: true, message: "Password is strong." };
+    };
+    const validation = validatePassword(password);
+    if (!validation.valid) {
+      return next(errorHandler(400, validation.message));
     }
     if (password !== confirmPassword) {
       return next(errorHandler(404, "password mismatch"));
@@ -76,6 +106,9 @@ export const signIn = async (req, res, next) => {
 export const updateProfile = async (req, res, next) => {
   if (req.user.id !== req.params.id) {
     return next(errorHandler(401, "You can update only your account!"));
+  }
+  if (req.body.username.trim().length < 2) {
+    return next(errorHandler(404, "username must be more then 2 char"));
   }
   try {
     const updateData = {

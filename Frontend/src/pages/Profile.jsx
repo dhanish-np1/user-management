@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import axios from "axios";
 import {
   signOut,
   updateUserFailure,
@@ -10,18 +9,18 @@ import {
 
 const ProfilePage = () => {
   const [profileImage, setProfileImage] = useState("");
-  const [formImg,setFormImage]=useState('');
+  const [formImg, setFormImage] = useState("");
   const [editing, setEditing] = useState(false);
-  const { currentUser } = useSelector((state) => state.user);
+  const { currentUser, error } = useSelector((state) => state.user);
   const [username, setUsername] = useState(currentUser.username);
   const dispatch = useDispatch();
-  const imagePath=`../uploads/${currentUser?.profile}`
+  const imagePath = `../uploads/${currentUser?.profile}`;
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
     reader.onloadend = () => {
       setProfileImage(reader.result);
-      setFormImage(file)
+      setFormImage(file);
     };
     if (file) {
       reader.readAsDataURL(file);
@@ -45,13 +44,25 @@ const ProfilePage = () => {
       formData.append("images", formImg);
       formData.append("username", username);
       const userId = currentUser._id;
-      const config = { headers: { "Content-Type": "multipart/form-data" },withCredentials: true };
-      const response = await axios.post(
-        `http://localhost:3000/update/${userId}`,
-        formData,
-        config
-      );
-      const data = response.data;
+      const response = await fetch(`http://localhost:3000/update/${userId}`, {
+        method: "POST",
+        headers: {},
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        dispatch(updateUserFailure(errorData));
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.success === false) {
+        dispatch(updateUserFailure(data));
+        return;
+      }
       if (data.success === false) {
         dispatch(updateUserFailure(data));
         return;
@@ -103,6 +114,9 @@ const ProfilePage = () => {
                 <h2 className="text-lg font-medium">{username}</h2>
               )}
             </div>
+            <p className="text-red-600 mt-5">
+              {error ? error.message || "Something went wrong!" : ""}
+            </p>
             <p className="text-gray-600 text-center mt-2">
               {currentUser.email}
             </p>
